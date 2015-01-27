@@ -67,6 +67,10 @@ func (c *Client) RemoveHost(id string) error {
 	return c.Delete("/" + id)
 }
 
+func (c *Client) BounceHost(id string) error {
+	return c.Post("/"+id+"/reboot", nil, nil)
+}
+
 func (c *Client) DumpLogs(out io.Writer) error {
 	res, err := c.RawReq("GET", "/dump-logs", nil, nil, nil)
 	if err != nil {
