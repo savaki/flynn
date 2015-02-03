@@ -1,6 +1,7 @@
 package zfs
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -30,6 +31,8 @@ type Provider struct {
 	Describes zfs config used at provider setup time.
 
 	`volume.ProviderSpec.Config` is deserialized to this for zfs.
+
+	Also is the output of `MarshalGlobalState`.
 */
 type ProviderConfig struct {
 	// DatasetName specifies the zfs dataset this provider will create volumes under.
@@ -112,6 +115,10 @@ func NewProvider(config *ProviderConfig) (volume.Provider, error) {
 	}, nil
 }
 
+func (b Provider) Kind() string {
+	return "zfs"
+}
+
 func (b *Provider) NewVolume() (volume.Volume, error) {
 	id := random.UUID()
 	v := &zfsVolume{
@@ -132,6 +139,18 @@ func (v *zfsVolume) Provider() volume.Provider {
 	return v.provider
 }
 
+func (b *Provider) MarshalGlobalState() (json.RawMessage, error) {
+	return json.Marshal(b.config)
+}
+
+func (b *Provider) MarshalVolumeState(volumeID string) (json.RawMessage, error) {
+	return nil, nil // TODO
+}
+
+func (b *Provider) RestoreVolumeState(volumeID string, data json.RawMessage) error {
+	return nil // TODO
+}
+
 func (v *zfsVolume) Info() *volume.Info {
 	return v.info
 }
@@ -145,6 +164,7 @@ func (v *zfsVolume) Mount(jobId, path string) (string, error) {
 		JobID:    jobId,
 		Location: path,
 	}
+	// VERY questionable if there's any point to this being stuck in per provider
 	if _, exists := v.mounts[mount]; exists {
 		return "", fmt.Errorf("volume: cannot make same mount twice!")
 	}
